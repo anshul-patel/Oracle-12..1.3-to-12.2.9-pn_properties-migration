@@ -1,0 +1,1468 @@
+#! /bin/ksh -p
+# Commented out for debugging and error trapping
+#set -x
+#***********************************************************************************
+#                    CHECKS
+#***********************************************************************************
+#  1) tnsping $TWO_TASK
+#  2) echo $TWO_TASK
+#  3) workflow, sql, xml directories under $AVI_TOP
+#
+#***********************************************************************************
+#                    MANUAL SETUP STEPS
+#***********************************************************************************
+#***********************************************************************************
+# MODULE NAME:    XXAQV_PN_PROP_C011A
+# DESCRIPTION     Common Utility package XXAQV_PN_PROP_C011_PKG
+#
+#                 This install script is for just to install changes for common conversion utilities.
+#                 It does not install all the other objects. Use XXAQV_PN_PROP_C011A.install if 
+#                 you want to install everything.
+#
+# Installation Script for module :
+#
+# IMPORTANT: All files must be present in the directory in which
+#            you are running this script.  It is advised that
+#            the following directory be used :
+#
+#            $XXAQV_TOP/install/import
+#
+# EXAMPLE:   ./XXAQV_PN_PROP_C011A.install
+#
+# PARAMETERS:
+#
+# MODULE VERSION
+# ==============
+#
+# VERSION   DATE         AUTHOR                 DESCRIPTION
+# --------  -----------  ---------------------- -----------------------------------
+# 0.1       28-05-2020  	CTS             	Initial Version
+#***********************************************************************************
+#
+#+------------------------------------------------------+
+#+ Parameters obtained from concurrent request          +
+#+------------------------------------------------------+
+#
+
+CUST_TOP=${XXAQV_TOP}
+LIB_TOP=${AU_TOP}
+l_link_name=xxaqv
+APPS_UN=APPS
+XXAQV_UN=XXAQV
+APEXEBS_UN=APEXEBS
+
+HOST=`tnsping $TWO_TASK | cut -d")" -f2 | cut -d"=" -f2 | tail -2`
+PORT=`tnsping $TWO_TASK | cut -d")" -f3 | cut -d"=" -f2 | tail -2`
+SID=$TWO_TASK
+
+ANS="n"
+while [ "${ANS}" = "n" ]
+do
+
+   l_apps_pswd=""
+   while [ "${l_apps_pswd}" = "" ]
+   do
+     print -n "Enter APPS Password : "
+     read l_apps_pswd
+   done
+
+   l_xxaqv_pswd=""
+   while [ "${l_xxaqv_pswd}" = "" ] 
+   do
+     print -n "Enter XXAQV password : "
+     read l_xxaqv_pswd
+   done
+
+   l_apexebs_pswd=""
+   while [ "${l_apexebs_pswd}" = "" ] 
+   do
+     print -n "Enter APEXEBS password : "
+     read l_apexebs_pswd
+   done
+
+   l_apps_instance=""
+   while [ "${l_apps_instance}" = "" ]
+   do
+     print -n "Enter Database Instance : "
+     read l_apps_instance
+   done
+
+   clear
+
+   echo "APPS Pwd    = ${l_apps_pswd}"
+   echo "XXAQV Pwd   = ${l_xxaqv_pswd}"
+   echo "APEXEBS Pwd = ${l_apexebs_pswd}"
+   echo "Instance    = ${l_apps_instance}"
+
+   print -n "Are the above values correct? (y/n):"
+   read ANS
+
+   l_apps_user_pswd=${APPS_UN}/${l_apps_pswd}
+   l_xxaqv_user_pswd=${XXAQV_UN}/${l_xxaqv_pswd}
+   l_apexebs_user_pswd=${APEXEBS_UN}/${l_apexebs_pswd}
+
+done
+
+#
+#+------------------------------------------------------+0
+#+  Enter Development Reference Below                   +
+#+------------------------------------------------------+
+#
+#
+l_dev_ref="XXAQV_PN_PROP_C011A"
+
+if [ -z "${l_dev_ref}" ] ; then
+   echo
+   echo "You must supply a reference in the l_dev_ref parameter i.e. CPWFND03INSTALL1"
+   echo
+   exit
+fi
+
+l_log_file=${l_dev_ref}.log
+
+rm -f ${l_log_file} 1>/dev/null 2>/dev/null
+
+#
+#+------------------------------------------------------+
+#+ Check that we have access to FNDLOAD                 +
+#+------------------------------------------------------+
+#
+which FNDLOAD &>/dev/null
+status=$?
+if [ ${status} -ne 0 ] ; then
+   echo "ERROR :- Unable to access FNDLOAD. Please add the FNDLOAD to PATH"
+   exit
+fi
+
+l_control_file_list="${FND_TOP}/patch/115/import/afffload.lct
+                     ${FND_TOP}/patch/115/import/afcpprog.lct
+                     ${FND_TOP}/patch/115/import/afscprof.lct
+                     ${FND_TOP}/patch/115/import/afsload.lct
+                     ${FND_TOP}/patch/115/import/afmdmsg.lct
+                     ${FND_TOP}/patch/115/import/aflvmlu.lct
+                     ${FND_TOP}/patch/115/import/afscursp.lct
+                     ${FND_TOP}/patch/115/import/afcpreqg.lct
+                     ${FND_TOP}/patch/115/import/afcprset.lct
+                     ${FND_TOP}/patch/115/import/affrmcus.lct
+                     ${XDO_TOP}/patch/115/import/xdotmpl.lct"
+
+#
+#+------------------------------------------------------+
+#+ Enter data filenames for FNDLOAD                     +
+#+------------------------------------------------------+
+#
+l_profile_list=""
+
+l_value_set_list=""
+
+l_conc_progs_list="XXAQV_PN_PROP_C011_PKG_CP.ldt"
+    
+l_dff_list=""
+
+l_form_list=""
+
+l_lookup_list=""
+
+l_function_list=""
+
+l_menu_list=""
+
+l_resp_list=""
+
+l_message_list=""
+
+l_request_set_list=""
+    
+l_request_group_list="XXAQV_PN_PROP_C011_PKG_RG.ldt"
+
+l_form_personalization_list=""
+
+#+------------------------------------------------------+
+#+ Enter SQL Scripts to create seed data                +
+#+------------------------------------------------------+
+#
+l_seed_list=""
+
+#+------------------------------------------------------+
+#+ Enter APPS SQL Scripts to create Tables/Indexes etc. +
+#+------------------------------------------------------+
+#
+#use this parameter for xdf file load
+l_xdf_list="XXAQV_PN_LOC_C011_STG.xdf
+XXAQV_PN_PROP_C011_STG.xdf"
+
+l_db_object_list="XXAQV_PN_PROP_C011_GRANTS.sql"
+
+l_db_object_param="XXAQV_PN_PROP_C011_GRANTS.sql/${l_apps_user_pswd}"
+
+
+#+------------------------------------------------------+
+#+ Enter SQL Scripts to create Triggers                 +
+#+------------------------------------------------------+
+#
+l_trigger_list=""
+
+#+------------------------------------------------------+
+#+ Enter SQL Scripts to create Packages                 +
+#+ NOTE: Put package specs before body                  +
+#+------------------------------------------------------+
+#
+l_db_pkg_list="XXAQV_PN_PROP_C011_PKG.pks
+XXAQV_PN_PROP_C011_PKG.pkb"
+
+#+------------------------------------------------------+
+#+ Enter Workflow definition files                      +
+#+ Enter Workflow definition files                      +
+#+------------------------------------------------------+
+#
+l_wf_list=""
+
+#+------------------------------------------------------+
+#+ Enter Shell script (.prog) files                     +
+#+------------------------------------------------------+
+#
+l_shell_list=""
+
+#+------------------------------------------------------+
+#+ Enter SQL Loader scripts                             +
+#+------------------------------------------------------+
+#
+l_ctl_list=""
+
+#+------------------------------------------------------+
+#+ Enter RDF files                                      +
+#+------------------------------------------------------+
+#
+l_rep_list=""
+
+#+------------------------------------------------------+
+#+ Enter FORM files (.fmb and .fmx)                     +
+#+------------------------------------------------------+
+#
+l_frm_list=""
+
+#+------------------------------------------------------+
+#+ Enter Library files (.pll and .plx)                  +
+#+------------------------------------------------------+
+#
+l_lib_list=""
+
+#+------------------------------------------------------+
+#+ Enter SQL Concurrent Programs                        +
+#+------------------------------------------------------+
+#
+l_sql_list=""
+
+#+------------------------------------------------------+
+#+ Enter logo files                                     +
+#+------------------------------------------------------+
+#
+l_logo_list=""
+
+#+------------------------------------------------------+
+#+ Enter XML Metadata files                             +
+#+------------------------------------------------------+
+#
+l_xml_list=""
+
+#+------------------------------------------------------+
+#+ Enter XML template files                             +
+#+------------------------------------------------------+
+# Example - l_xml_param: 
+#  TEMPLATE_FILE_NAME.xsl/TEMPLATE_CODE/APPL_SHORT_NAME/XSL-FO/00
+#  XSL-FO => template type, 00 => territory
+#
+l_xml_files=""
+    
+l_xml_param=""
+#+------------------------------------------------------+
+#+ Enter OAF Zip File                                   +
+#+------------------------------------------------------+
+#
+# zip File
+l_OAF_zip=""
+
+l_OAF_list=""
+
+# Enter location of jpx file on server (full path from Root Directory)
+l_jpx_location=""
+l_jpx_file=""
+
+#+------------------------------------------------------+
+#+ Enter miscellaneous files                            +
+#+------------------------------------------------------+
+# Format for l_misc_files_copy and l_misc_files_unzip: filename:target-path 
+l_misc_files=""
+
+l_misc_files_copy=""
+
+l_misc_files_unzip=""
+
+#+
+#+------------------------------------------------------+
+#+ Concatenate all the lists                            +
+#+------------------------------------------------------+
+#
+l_file_list="${l_profile_list} ${l_seed_list} ${l_dff_list} ${l_form_list} ${l_function_list} ${l_xdf_list} ${l_db_object_list} ${l_lookup_list} ${l_message_list} \
+             ${l_db_pkg_list} ${l_wf_list} ${l_shell_list} ${l_ctl_list} ${l_resp_list} ${l_request_set_list} ${l_request_group_list} ${l_form_personalization_list} \
+             ${l_rep_list} ${l_frm_list} ${l_lib_list} ${l_trigger_list} ${l_sql_list} ${l_value_set_list} \
+             ${l_conc_progs_list} ${l_logo_list} ${l_xml_list} ${l_xml_files} ${l_OAF_list} ${l_OAF_zip} ${l_misc_files} \
+			 ${l_misc_files_unzip} ${l_misc_files_copy}"
+
+
+if [ -z "${l_install_from}" ] ; then
+   echo
+   echo "Assuming all files are in the current directory"
+   echo
+   l_install_from=`pwd`
+fi
+
+#
+#+------------------------------------------------------+
+#+ Declare any functions for this script                +
+#+------------------------------------------------------+
+#
+#+------------------------------------------------------+
+#+ Name       : WRITE_MESSAGE                           +
+#+ Description: Display a message to the log file       +
+#+ Parameters:  message                                 +
+#+------------------------------------------------------+
+#
+USAGE="usage: WRITE_MESSAGE message"
+function WRITE_MESSAGE
+{
+    echo
+    echo `date +"%X > "` $1
+    echo
+
+    echo                    >>${l_log_file}
+    echo `date +"%X > "` $1 >>${l_log_file}
+    echo                    >>${l_log_file}
+}
+#
+#+------------------------------------------------------+
+#+ Name       : CHECK_CONNECTION                        +
+#+ Description: Checks the connection details           +
+#+ Parameters:  username and password                   +
+#+------------------------------------------------------+
+#
+function CHECK_CONNECTION
+{
+  WRITE_MESSAGE "Checking database connection details"
+
+  w_ora_check=`sqlplus -s ${l_apps_user_pswd}@${l_apps_instance} <<+
+  WHENEVER SQLERROR EXIT 1
+  SET HEADING  OFF
+  SET PAGESIZE 0
+  SET FEEDBACK OFF
+  SELECT '1'
+  FROM   dual
+/
++` || w_ora_check="0"
+
+  if [ "${w_ora_check}" != "1" ]
+  then
+     echo "Error: INVALID APPS PASSWORD. \nEnter the correct APPS password."
+     exit 1
+  else
+     echo "APPS Connected OK"
+  fi;
+
+  w_ora_check=""
+
+  w_ora_check=`sqlplus -s ${l_xxaqv_user_pswd}@${l_apps_instance} <<+
+  WHENEVER SQLERROR EXIT 1
+  SET HEADING  OFF
+  SET PAGESIZE 0
+  SET FEEDBACK OFF
+  SELECT '1'
+  FROM   dual
+/
++` || w_ora_check="0"
+
+  if [ "${w_ora_check}" != "1" ]
+  then
+     echo "Error: INVALID XXAQV PASSWORD. \nEnter the correct XXAQV password."
+     exit 1
+  else
+     echo "XXAQV Connected OK"
+  fi;
+
+  echo "Passwords have been checked\n"
+} # End function CHECK_CONNECTION
+
+#
+#+------------------------------------------------------+
+#+ Name       : BANNER                                  +
+#+ Description: Display Banner                          +
+#+ Parameters:  None                                    +
+#+------------------------------------------------------+
+USAGE="usage: BANNER"
+function BANNER
+{
+    #clear
+    echo "++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee -a ${l_log_file}
+    echo "+                                                   " | tee -a ${l_log_file}
+    echo "+ Installation Script for ${l_dev_ref}              " | tee -a ${l_log_file}
+    echo "+                                                   " | tee -a ${l_log_file}
+    echo "+ Installing from ${l_install_from}                 " | tee -a ${l_log_file}
+    echo "+ Installing into database ${SID}                   " | tee -a ${l_log_file}
+    echo "++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee -a ${l_log_file}
+    echo
+    echo
+}
+#
+#+------------------------------------------------------+
+#+ Name       : CONTINUE                                +
+#+ Description: Request a response                      +
+#+ Parameters:  None                                    +
+#+------------------------------------------------------+
+USAGE="usage: CONTINUE"
+function CONTINUE
+{
+    echo "Continue Installation Y/N  [Y]: "
+    read ANS
+    if [ "X${ANS}" = "X" ] ; then
+        ANS=Y
+    else
+        if [ ${ANS} = "Y" -o ${ANS} = "y" ] ; then
+            ANS=Y
+        else
+            ANS=N
+        fi
+    fi
+
+    if [ "${ANS}" = "Y" ] ; then
+        WRITE_MESSAGE "Instalation will proceed"
+        l_ret_code=0
+    else
+        WRITE_MESSAGE "Installation cancelled"
+        l_ret_code=1
+    fi
+
+    return ${l_ret_code}
+}
+#
+#+------------------------------------------------------+
+#+ Name       : CHECK_FILES                             +
+#+ Description: Checks the connection details           +
+#+ Parameters:  username and password                   +
+#+------------------------------------------------------+
+USAGE="usage: CHECK_FILES"
+function CHECK_FILES
+{
+    WRITE_MESSAGE "Checking if all required files are present in the ${l_install_from} directory"
+
+    l_ret_status=0
+
+    for file in ${l_file_list} ; do
+        #WRITE_MESSAGE "Checking ${file}"
+        if [ -f ${l_install_from}/${file} ] ; then
+            WRITE_MESSAGE "${file} OK"
+            chmod 755 ${file}
+        else
+            WRITE_MESSAGE "ERROR: Cannot find file ${file}"
+            l_ret_status=1
+        fi
+    done
+
+    for file in ${l_control_file_list} ; do
+        #WRITE_MESSAGE "Checking ${file}"
+        if [ -f ${file} ] ; then
+            WRITE_MESSAGE "${file} OK"
+        else
+            WRITE_MESSAGE "ERROR: Cannot find file ${file}"
+            l_ret_status=1
+        fi
+    done
+
+    return ${l_ret_status}
+}
+
+#
+#+------------------------------------------------------+
+#+ Name       : DO_XDF                                  +
+#+ Description: Runs an XDF File                        +
+#+ Parameters:  APPS_USR_PWD, XXAQV_USR_PWD, Filename   +
+#+------------------------------------------------------+
+#
+USAGE="usage: DO_XDF <param1> <param2> <param3>"
+function DO_XDF
+{
+    l_file=$1
+
+    if [ -z ${l_file} ] ; then
+        WRITE_MESSAGE "No script passed to run"
+        return
+    fi
+
+    l_tmp_file=$$.dat
+
+    rm -f ${l_tmp_file}
+
+    # Backup the file if it exists
+
+    if (test ! -e ${CUST_TOP}/install/sql/${l_file}) then
+       WRITE_MESSAGE "${l_file} does not exist. Not backing up ..." 
+    else
+       cp -f ${CUST_TOP}/install/sql/${l_file} ${CUST_TOP}/install/sql/${l_file}.`date '+%d%m%y'`
+       WRITE_MESSAGE "${l_file} backed up successfully ..."
+       # Check that the move was successful
+
+       if (test ! -e ${CUST_TOP}/install/sql/${l_file}) then
+
+         WRITE_MESSAGE "Failed to move ${l_file} to ${CUST_TOP}/install/sql. Exiting"
+         return 1
+
+       fi
+
+    fi
+
+    WRITE_MESSAGE "Installing ${l_file} into the database"
+
+    perl $FND_TOP/bin/xdfcmp.pl ${l_xxaqv_user_pswd} ${l_file} ${l_apps_user_pswd} 2> ${l_tmp_file}
+
+   # l_fnd_log_file=`cat ${l_tmp_file}|grep Log|awk -F':' '{print $2}'`
+
+    WRITE_MESSAGE "Displaying contents of FNDLOAD Log File ${l_fnd_log_file}"
+
+    #cat ${l_fnd_log_file} | tee -a  ${l_log_file}
+	
+	cat ${l_tmp_file} | tee -a  ${l_log_file}
+
+    rm -f ${l_tmp_file} 1>/dev/null 2>/dev/null
+
+    rm -f ${l_fnd_log_file} 1>/dev/null
+
+    # Move LDT file to install directory
+    cp -f ${l_install_from}/${l_file} ${CUST_TOP}/install/sql
+
+    # Check that the move was successful
+    if (test ! -e ${CUST_TOP}/install/sql/${l_file}) then
+
+       WRITE_MESSAGE "Failed to move ${l_install_from}/${l_file} to ${CUST_TOP}/install/sql. Exiting"
+       exit 1
+
+    fi
+
+}
+
+#
+#+------------------------------------------------------+
+#+ Name       : DO_DB                                   +
+#+ Description: Runs an SQL File                        +
+#+ Parameters:  Filename                                +
+#+------------------------------------------------------+
+#
+USAGE="usage: DO_DB filename <param1> <param2>"
+function DO_DB
+{
+    l_user_pswd=$1
+    l_file=$2
+
+    if [ -z ${l_file} ] ; then
+        WRITE_MESSAGE "No script passed to run"
+        return
+    fi
+
+    l_tmp_file=$$.dat
+
+    rm -f ${l_tmp_file}
+
+    # Backup the file if it exists
+
+    if (test ! -e ${CUST_TOP}/install/sql/${file}) then
+       WRITE_MESSAGE "${file} does not exist. Not backing up ..." 
+    else
+       cp -f ${CUST_TOP}/install/sql/${file} ${CUST_TOP}/install/sql/${file}.`date '+%d%m%y'`
+       WRITE_MESSAGE "${file} backed up successfully ..."
+       # Check that the move was successful
+
+       if (test ! -e ${CUST_TOP}/install/sql/${l_file}) then
+
+         WRITE_MESSAGE "Failed to move ${l_file} to ${CUST_TOP}/install/sql. Exiting"
+         return 1
+
+       fi
+
+    fi
+
+    WRITE_MESSAGE "Installing ${l_file} into the database"
+
+    sqlplus ${l_user_pswd} >${l_tmp_file} 2>&1 <<+EOF+
+    @${l_install_from}/${l_file}
+    exit
++EOF+
+
+    cat ${l_tmp_file}  | tee -a ${l_log_file}
+
+    rm -f ${l_tmp_file}
+
+    # Move file to install directory
+    cp -f ${l_install_from}/${l_file} ${CUST_TOP}/install/sql
+
+}
+#
+#+------------------------------------------------------+
+#+ Name       : DO_FNDLOAD                              +
+#+ Description: Imports data via FNDLOAD                +
+#+ Parameters:  FNDLOAD Control File                    +
+#               FNDLOAD Data Filename                   +
+#+------------------------------------------------------+
+#
+USAGE="usage: DO_FNDLOAD <param1> <param2>"
+function DO_FNDLOAD
+{
+    l_control_file=$1
+    l_file=$2
+    l_tmp_file=$$.dat
+    l_partial_type=$3
+
+    if [ -z ${l_control_file} ] ; then
+        WRITE_MESSAGE "No Control File passed to run"
+        return
+    fi
+
+    if [ -z ${l_file} ] ; then
+        WRITE_MESSAGE "No Data File passed to import"
+        return
+    fi
+#
+#+------------------------------------------------------+
+#+ Check that we have access to the Control File        +
+#+------------------------------------------------------+
+#
+    if [ ! -f ${l_control_file} ] ; then
+        WRITE_MESSAGE "Unable to access Control File ${l_control_file}"
+        return
+    fi
+
+    WRITE_MESSAGE "Installing ${l_file} into the database via FNDLOAD"
+
+    if [ ! "${l_partial_type}" = "FULL" ] ; then
+       WRITE_MESSAGE "Performing partial load for type $l_partial_type"
+    else
+       WRITE_MESSAGE "Performing full fnd load"
+    fi
+
+    if [ "$l_partial_type" = "FORM" ] ; then
+      FNDLOAD ${l_apps_user_pswd} 0 Y UPLOAD_PARTIAL ${l_control_file} ${l_install_from}/${l_file} FORM 2> ${l_tmp_file}
+    elif [ "$l_partial_type" = "FUNCTION" ] ; then
+      FNDLOAD ${l_apps_user_pswd} 0 Y UPLOAD_PARTIAL ${l_control_file} ${l_install_from}/${l_file} FUNCTION 2> ${l_tmp_file}
+    else     
+      FNDLOAD ${l_apps_user_pswd} 0 Y UPLOAD ${l_control_file} ${l_install_from}/${l_file} UPLOAD_MODE=REPLACE CUSTOM_MODE=FORCE 2> ${l_tmp_file}
+    fi
+
+    l_fnd_log_file=`cat ${l_tmp_file}|grep Log|awk -F':' '{print $2}'`
+
+    WRITE_MESSAGE "Displaying contents of FNDLOAD Log File ${l_fnd_log_file}"
+
+    cat ${l_fnd_log_file} | tee -a  ${l_log_file}
+
+    rm -f ${l_tmp_file} 1>/dev/null 2>/dev/null
+
+    rm -f ${l_fnd_log_file} 1>/dev/null
+
+    # Move LDT file to install directory
+    cp -f ${l_install_from}/${l_file} ${CUST_TOP}/install/import
+
+    # Check that the move was successful
+    if (test ! -e ${CUST_TOP}/install/import/${l_file}) then
+
+       WRITE_MESSAGE "Failed to move ${l_install_from}/${l_file} to ${CUST_TOP}/install/import. Exiting"
+       exit 1
+
+    fi
+
+}
+#
+#+------------------------------------------------------+
+#+ Name       : INSTALL_SEED_DATA                       +
+#+ Description: Installs Seed Data                      +
+#+ Parameters:  None                                    +
+#+------------------------------------------------------+
+#
+USAGE="usage: INSTALL_SEED_DATA"
+function INSTALL_SEED_DATA
+{
+    WRITE_MESSAGE "Installing Value Sets and DFF Data"
+
+    l_control_file=${FND_TOP}/patch/115/import/afffload.lct
+    for file in ${l_value_set_list} ; do
+        WRITE_MESSAGE "Installing Value Set from ${file}"
+        DO_FNDLOAD  ${l_control_file} ${file} FULL
+    done
+
+    for file in ${l_dff_list} ; do
+        WRITE_MESSAGE "Installing Descriptive Flexfields from ${file}"
+        DO_FNDLOAD  ${l_control_file} ${file} FULL
+    done
+
+    WRITE_MESSAGE "Installing Concurrent Programs"
+
+    l_control_file=${FND_TOP}/patch/115/import/afcpprog.lct
+    for file in ${l_conc_progs_list} ; do
+        WRITE_MESSAGE "Installing Concurrent Program from ${file}"
+        DO_FNDLOAD  ${l_control_file} ${file} FULL
+    done
+
+    WRITE_MESSAGE "Installing Request Sets"
+
+    l_control_file=${FND_TOP}/patch/115/import/afcprset.lct
+    for file in ${l_request_set_list} ; do
+        WRITE_MESSAGE "Installing Request Set from ${file}"
+        DO_FNDLOAD  ${l_control_file} ${file} FULL
+    done
+
+    WRITE_MESSAGE "Installing Request Groups"
+
+    l_control_file=${FND_TOP}/patch/115/import/afcpreqg.lct
+    for file in ${l_request_group_list} ; do
+        WRITE_MESSAGE "Installing Request Group from ${file}"
+        DO_FNDLOAD  ${l_control_file} ${file} FULL
+    done
+
+    WRITE_MESSAGE "Installing Lookups"
+
+    l_control_file=${FND_TOP}/patch/115/import/aflvmlu.lct
+    for file in ${l_lookup_list} ; do
+        WRITE_MESSAGE "Installing Lookup from ${file}"
+        DO_FNDLOAD  ${l_control_file} ${file} FULL
+    done
+
+    WRITE_MESSAGE "Installing Forms"
+
+    l_control_file=${FND_TOP}/patch/115/import/afsload.lct
+    for file in ${l_form_list} ; do
+        WRITE_MESSAGE "Installing Form from ${file}"
+        DO_FNDLOAD  ${l_control_file} ${file} FORM
+    done
+
+    WRITE_MESSAGE "Installing Functions"
+
+    l_control_file=${FND_TOP}/patch/115/import/afsload.lct
+    for file in ${l_function_list} ; do
+        WRITE_MESSAGE "Installing Function from ${file}"
+        DO_FNDLOAD  ${l_control_file} ${file} FUNCTION
+    done
+
+    WRITE_MESSAGE "Installing Menus"
+
+    l_control_file=${FND_TOP}/patch/115/import/afsload.lct
+    for file in ${l_menu_list} ; do
+        WRITE_MESSAGE "Installing Menu from ${file}"
+        DO_FNDLOAD  ${l_control_file} ${file} FULL
+    done
+
+    WRITE_MESSAGE "Installing Responsibilities"
+
+    l_control_file=${FND_TOP}/patch/115/import/afscursp.lct
+    for file in ${l_resp_list} ; do
+        WRITE_MESSAGE "Installing Responsibility from ${file}"
+        DO_FNDLOAD  ${l_control_file} ${file} FULL
+    done
+
+    WRITE_MESSAGE "Installing Messages"
+
+    l_control_file=${FND_TOP}/patch/115/import/afmdmsg.lct
+    for file in ${l_message_list} ; do
+        WRITE_MESSAGE "Installing Message from ${file}"
+        DO_FNDLOAD  ${l_control_file} ${file}
+    done
+
+    WRITE_MESSAGE "Installing Forms Personalizations"
+
+    l_control_file=${FND_TOP}/patch/115/import/affrmcus.lct
+    for file in ${l_form_personalization_list} ; do
+        WRITE_MESSAGE "Installing Forms Personalizations from ${file}"
+        DO_FNDLOAD  ${l_control_file} ${file}
+    done
+
+    WRITE_MESSAGE "Installing Profiles"
+
+    l_control_file=${FND_TOP}/patch/115/import/afscprof.lct
+    for file in ${l_profile_list} ; do
+        WRITE_MESSAGE "Installing Profile from ${file}"
+        DO_FNDLOAD  ${l_control_file} ${file} FULL
+    done
+
+    WRITE_MESSAGE "Installing Seed Data"
+
+    for file in ${l_seed_list} ; do
+        WRITE_MESSAGE "Installing Seed Data from ${file}"
+        DO_DB ${l_apps_user_pswd} ${file}
+    done
+
+}
+#
+#+------------------------------------------------------+
+#+ Name       : INSTALL_TRIGGERS                        +
+#+ Description: Installs Triggers                       +
+#+ Parameters:  None                                    +
+#+------------------------------------------------------+
+USAGE="usage: INSTALL_TRIGGERS"
+function INSTALL_TRIGGERS
+{
+    WRITE_MESSAGE "Installing Triggers"
+
+    for file in ${l_trigger_list} ; do
+        WRITE_MESSAGE "Installing Trigger from ${file}"
+        DO_DB ${l_apps_user_pswd} ${file}
+    done
+
+}
+#
+#+------------------------------------------------------+
+#+ Name       : INSTALL_DB_OBJECTS                      +
+#+ Description: Installs tables and other objects       +
+#+ Parameters:  None                                    +
+#+------------------------------------------------------+
+USAGE="usage: INSTALL_DB_OBJECTS"
+function INSTALL_DB_OBJECTS
+{	
+    
+	WRITE_MESSAGE "Installing Database Objects using XDF files"
+	
+	for file in ${l_xdf_list}; do
+		WRITE_MESSAGE "Installing Database Object from ${file}"
+		DO_XDF ${file}
+	done
+	
+	WRITE_MESSAGE "Installing APPS Database Objects"
+
+#   for file in ${l_db_object_list} ; do
+#       WRITE_MESSAGE "Installing Database Object from ${file}"
+#       DO_DB ${l_apps_user_pswd} ${file}
+#   done
+
+    for param in ${l_db_object_param} ; do
+       file=`echo $param | cut -d"/" -f1 | tail -1`
+       user=`echo $param | cut -d"/" -f2 | tail -1`
+       pswd=`echo $param | cut -d"/" -f3 | tail -1`
+    
+       conn="${user}/${pswd}"
+    
+       WRITE_MESSAGE "Installing Database Object from ${file} with connection ${user}"
+       DO_DB ${conn} ${file}
+    done
+    
+}
+#
+#+------------------------------------------------------+
+#+ Name       : INSTALL_PACKAGES                        +
+#+ Description: Installs Packages                       +
+#+ Parameters:  None                                    +
+#+------------------------------------------------------+
+USAGE="usage: INSTALL_PACKAGES"
+function INSTALL_PACKAGES
+{
+    WRITE_MESSAGE "Installing Database Packages"
+
+    for file in ${l_db_pkg_list} ; do
+        WRITE_MESSAGE "Installing Database Package from ${file}"
+        DO_DB ${l_apps_user_pswd} ${file}
+    done
+
+}
+
+#
+#+------------------------------------------------------+
+#+ Name       : INSTALL_WORKFLOWS                       +
+#+ Description: Installs Workflows                      +
+#+ Parameters:  None                                    +
+#+------------------------------------------------------+
+USAGE="usage: INSTALL_WORKFLOWS"
+function INSTALL_WORKFLOWS
+{
+    WRITE_MESSAGE "Installing Workflows"
+
+    for file in ${l_wf_list} ; do
+        WRITE_MESSAGE "Installing Workflow from ${file}"
+        WFLOAD ${l_apps_user_pswd} 0 Y UPLOAD ${l_install_from}/${file} 2>&1 | tee -a ${l_log_file}
+
+        # Move workflow file to install directory
+        cp -f ${l_install_from}/${file} ${CUST_TOP}/workflow
+
+        # Check that the move was successful
+        if (test ! -e ${CUST_TOP}/workflow/${file}) then
+
+           WRITE_MESSAGE "Failed to move ${file} to ${CUST_TOP}/workflow. Exiting"
+           exit 1
+
+        fi
+    done
+
+}
+#
+#+------------------------------------------------------+
+#+ Name       : INSTALL_SHELL_SCRIPTS                   +
+#+ Description: Installs Shell Scripts                  +
+#+ Parameters:  None                                    +
+#+------------------------------------------------------+
+USAGE="usage: INSTALL_SHELL_SCRIPTS"
+function INSTALL_SHELL_SCRIPTS
+{
+    WRITE_MESSAGE "Installing Shell Scripts"
+
+    # Check that the shell script to strip control files exists
+    #if (test ! -e ${CUST_TOP}/bin/CPW_STRIP_CTRL.prog) then
+
+    #   WRITE_MESSAGE "Could not find shell script to strip control characters. Exiting"
+    #   exit 1
+
+    #fi
+
+    for file in ${l_shell_list} ; do
+        WRITE_MESSAGE "Installing Shell Script ${file}"
+
+        chmod a+rx ${l_install_from}/${file}
+        if (test ! -e ${CUST_TOP}/bin/${file}) then
+           WRITE_MESSAGE "${file} does not exist. Not backing up ..."
+ 
+        else
+           cp -f ${CUST_TOP}/bin/${file} ${CUST_TOP}/bin/${file}.`date '+%d%m%y'`
+           WRITE_MESSAGE "${file} backed up successfully ..."
+         fi
+
+
+
+        cp -f ${l_install_from}/${file} ${CUST_TOP}/bin/
+
+        # Check that the move was successful
+        if (test ! -e ${CUST_TOP}/bin/${file}) then
+
+           WRITE_MESSAGE "Failed to move ${file} to ${CUST_TOP}/bin. Exiting"
+           exit 1
+
+        fi
+
+        WRITE_MESSAGE "Stripping shell script of ^M control characters"
+
+        #${CUST_TOP}/bin/CPW_STRIP_CTRL.prog ${CUST_TOP}/bin/${file}
+        l_link_name=`echo ${file}|awk -F'.' '{print $1}'`
+
+        WRITE_MESSAGE "Creating symbolic link for ${l_link_name}"
+
+        if [ -h ${CUST_TOP}/bin/${l_link_name} ] ; then
+            WRITE_MESSAGE "Link already exists - it will not be updated"
+        else
+            ln -s $FND_TOP/bin/fndcpesr ${CUST_TOP}/bin/${l_link_name} 2>&1 | tee -a ${l_log_file}
+        fi
+    done
+
+}
+#
+#+------------------------------------------------------+
+#+ Name       : INSTALL_CTL_SCRIPTS                     +
+#+ Description: Installs Control Files                  +
+#+ Parameters:  None                                    +
+#+------------------------------------------------------+
+USAGE="usage: INSTALL_CTL_SCRIPTS"
+function INSTALL_CTL_SCRIPTS
+{
+    WRITE_MESSAGE "Installing SQL Loader Scripts"
+
+    for file in ${l_ctl_list} ; do
+        WRITE_MESSAGE "Installing SQL Loader Script ${file}"
+
+        if (test ! -e ${CUST_TOP}/bin/${file}) then
+           WRITE_MESSAGE "${file} does not exist. Not backing up ..."
+ 
+        else
+           cp -f ${CUST_TOP}/bin/${file} ${CUST_TOP}/bin/${file}.`date '+%d%m%y'`
+           WRITE_MESSAGE "${file} backed up successfully ..."
+         fi
+
+        cp -f ${l_install_from}/${file} ${CUST_TOP}/bin/
+
+        # Check that the move was successful
+        if (test ! -e ${CUST_TOP}/bin/${file}) then
+
+           WRITE_MESSAGE "Failed to move ${file} to ${CUST_TOP}/bin. Exiting"
+           exit 1
+
+        fi
+
+    done
+
+}
+#
+#+------------------------------------------------------+
+#+ Name       : INSTALL_RDF_FILES                       +
+#+ Description: Installs Report Files                   +
+#+ Parameters:  None                                    +
+#+------------------------------------------------------+
+USAGE="usage: INSTALL_RDF_FILES"
+function INSTALL_RDF_FILES
+{
+    WRITE_MESSAGE "Installing Report Files"
+
+    for file in ${l_rep_list} ; do
+        WRITE_MESSAGE "Installing Report File ${file}"
+
+        if (test ! -e ${CUST_TOP}/reports/US/${file}) then
+           WRITE_MESSAGE "${file} does not exist. Not backing up ..." 
+        else
+           cp -f ${CUST_TOP}/reports/US/${file} ${CUST_TOP}/reports/US/${file}.`date '+%d%m%y'`
+           WRITE_MESSAGE "${file} backed up successfully ..."
+         fi
+
+        cp -f ${l_install_from}/${file} ${CUST_TOP}/reports/US/
+
+        # Check that the move was successful
+        if (test ! -e ${CUST_TOP}/reports/US/${file}) then
+
+           WRITE_MESSAGE "Failed to move ${file} to ${CUST_TOP}/reports/US. Exiting"
+           exit 1
+
+        fi
+    done
+
+}
+#
+#
+#+------------------------------------------------------+
+#+ Name       : INSTALL_FRM_FILES                       +
+#+ Description: Installs Form (.fmb and .fmx) Files     +
+#+              The forms will have to be installed on  +
+#+              forms server!                           +
+#+ Parameters:  None                                    +
+#+------------------------------------------------------+
+USAGE="usage: INSTALL_FRM_FILES"
+function INSTALL_FRM_FILES
+{
+    WRITE_MESSAGE "Installing Form (.fmb and .fmx) Files"
+
+    for file in ${l_frm_list} ; do
+        WRITE_MESSAGE "Installing Form File ${file}"
+
+        if (test ! -e ${CUST_TOP}/forms/US/${file}) then
+           WRITE_MESSAGE "${file} does not exist. Not backing up ..." 
+        else
+           cp -f ${CUST_TOP}/forms/US/${file} ${CUST_TOP}/forms/US/${file}.`date '+%d%m%y'`
+           WRITE_MESSAGE "${file} backed up successfully ..."
+         fi
+
+        cp -f ${l_install_from}/${file} ${CUST_TOP}/forms/US/
+
+        # Check that the move was successful
+        if (test ! -e ${CUST_TOP}/forms/US/${file}) then
+
+           WRITE_MESSAGE "Failed to move ${file} to ${CUST_TOP}/forms/US. Exiting"
+           exit 1
+
+        fi
+    done
+
+}
+#
+#+------------------------------------------------------+
+#+ Name       : INSTALL_SQL_FILES                       +
+#+ Description: Installs SQL Files                      +
+#+ Parameters:  None                                    +
+#+------------------------------------------------------+
+USAGE="usage: INSTALL_SQL_FILES"
+function INSTALL_SQL_FILES
+{
+    WRITE_MESSAGE "Installing SQL Files"
+
+    for file in ${l_sql_list} ; do
+        WRITE_MESSAGE "Installing SQL File ${file}"
+
+        if (test ! -e ${CUST_TOP}/sql/${file}) then
+           WRITE_MESSAGE "${file} does not exist. Not backing up ..." 
+        else
+           cp -f ${CUST_TOP}/sql/${file} ${CUST_TOP}/sql/${file}.`date '+%d%m%y'`
+           WRITE_MESSAGE "${file} backed up successfully ..."
+         fi
+
+        cp -f ${l_install_from}/${file} ${CUST_TOP}/sql/
+
+        # Check that the move was successful
+        if (test ! -e ${CUST_TOP}/sql/${file}) then
+
+           WRITE_MESSAGE "Failed to move ${file} to ${CUST_TOP}/sql. Exiting"
+           exit 1
+
+        fi
+    done
+
+}
+
+#+------------------------------------------------------+
+#+ Name       : INSTALL_LIBRARY                         +
+#+ Description: Installs Custom Libraries (.pll and     +
+#+              .plx) The library will have to be       +
+#+              installed on the forms server!          +
+#+ Parameters:  None                                    +
+#+------------------------------------------------------+
+USAGE="usage: INSTALL_LIBRARY"
+function INSTALL_LIBRARY
+{
+    WRITE_MESSAGE "Installing Custom libraries (.pll and .plx) Files"
+
+    for file in ${l_lib_list} ; do
+        WRITE_MESSAGE "Installing Library File ${file}"
+
+        if (test ! -e ${LIB_TOP}/resource/${file}) then
+           WRITE_MESSAGE "${file} does not exist. Not backing up ..." 
+        else
+           cp -f ${LIB_TOP}/resource/${file} ${LIB_TOP}/resource/${file}.`date '+%d%m%y'`
+           WRITE_MESSAGE "${file} backed up successfully ..."
+         fi
+
+        if (test ! -e ${CUST_TOP}/forms/US/${file}) then
+           WRITE_MESSAGE "${file} does not exist. Not backing up ..." 
+        else
+           cp -f ${CUST_TOP}/forms/US/${file} ${CUST_TOP}/forms/US/${file}.`date '+%d%m%y'`
+           WRITE_MESSAGE "${file} backed up successfully ..."
+         fi
+
+
+        cp -f ${l_install_from}/${file} ${LIB_TOP}/resource/
+
+        # Check that the move was successful
+        if (test ! -e ${LIB_TOP}/resource/${file}) then
+
+           WRITE_MESSAGE "Failed to move ${file} to ${LIB_TOP}/resource. Exiting"
+           exit 1
+
+        fi
+        cp -f ${l_install_from}/${file} ${CUST_TOP}/forms/US/
+
+        # Check that the move was successful
+        if (test ! -e ${CUST_TOP}/forms/US/${file}) then
+
+           WRITE_MESSAGE "Failed to move ${file} to ${CUST_TOP}/forms/US. Exiting"
+           exit 1
+
+        fi
+
+    done
+
+}
+
+#+------------------------------------------------------+
+#+ Name       : INSTALL_XML_METADATA                    +
+#+ Description: Install XML Metadata                    +
+#+ Parameters:  None                                    +
+#+------------------------------------------------------+
+USAGE="usage: INSTALL_XML_METADATA"
+function INSTALL_XML_METADATA
+{
+  
+    WRITE_MESSAGE "Installing XML Template Metadata"
+    for file in ${l_xml_list} ; do
+
+        WRITE_MESSAGE "Installing XML Template Metadata ${file}"
+
+        $FND_TOP/bin/FNDLOAD ${l_apps_user_pswd} 0 Y UPLOAD $XDO_TOP/patch/115/import/xdotmpl.lct ${l_install_from}/${file} 2>&1 | tee -a ${l_log_file}
+
+    done
+
+}
+
+#+------------------------------------------------------+
+#+ Name       : INSTALL_XML_TEMPLATE                    +
+#+ Description: Install XML Template files              +
+#+ Parameters:  None                                    +
+#+------------------------------------------------------+
+
+USAGE="usage: INSTALL_XML_TEMPLATE"
+function INSTALL_XML_TEMPLATE
+{
+  
+    PW_APPS=`echo ${l_apps_user_pswd} | cut -d"/" -f2 | tail -1`
+    WRITE_MESSAGE "Installing XML Template Template Files"
+    for file in ${l_xml_param} ; do
+  
+       templ=`echo $file | cut -d"/" -f1 | tail -1`
+       templCode=`echo $file | cut -d"/" -f2 | tail -1`
+       applCode=`echo $file | cut -d"/" -f3 | tail -1`
+       templType=`echo $file | cut -d"/" -f4 | tail -1`
+       territory=`echo $file | cut -d"/" -f5 | tail -1`
+       lobType=`echo $file | cut -d"/" -f6 | tail -1`
+       templLang=`echo $file | cut -d"/" -f7 | tail -1`
+       
+        java oracle.apps.xdo.oa.util.XDOLoader \
+        UPLOAD \
+         -DB_USERNAME apps \
+         -DB_PASSWORD $PW_APPS \
+         -JDBC_CONNECTION $HOST:$PORT:$SID \
+         -LOB_TYPE ${lobType} \
+         -APPS_SHORT_NAME ${applCode} \
+         -LOB_CODE ${templCode} \
+         -LANGUAGE ${templLang} \
+         -TERRITORY ${territory} \
+         -XDO_FILE_TYPE ${templType} \
+         -FILE_NAME ${l_install_from}/${templ} \
+         -CUSTOM_MODE FORCE \
+         -NLS_LANG American_America.UTF8 2>&1 | tee -a ${l_log_file}
+
+    done
+
+    for file in ${l_xml_files} ; do
+
+        WRITE_MESSAGE "Installing XML template ${file}"
+        # Move xml file to xml directory
+
+        cp -f ${l_install_from}/${file} ${CUST_TOP}/install/import
+
+        # Check that the move was successful
+        if (test ! -e ${CUST_TOP}/install/import/${file}) then
+
+           WRITE_MESSAGE "Failed to move ${file} to ${CUST_TOP}/install/import. Exiting"
+           exit 1
+
+        fi
+
+    done
+
+}
+
+
+#+------------------------------------------------------+
+#+ Name       : INSTALL_LOGOS                           +
+#+ Description: Install Logos needed by XML templates   +
+#+ Parameters:  None                                    +
+#+------------------------------------------------------+
+
+USAGE="usage: INSTALL_LOGOS"
+function INSTALL_LOGOS
+{
+  
+    WRITE_MESSAGE "Installing LOGO Files"
+    for file in ${l_logo_list} ; do
+  
+        WRITE_MESSAGE "Installing logo: ${file}"
+        # Move logos to $OA_MEDIA directory
+
+        cp -f ${l_install_from}/${file} ${OA_MEDIA}
+
+        # Check that the move was successful
+        if (test ! -e ${OA_MEDIA}/${file}) then
+
+           WRITE_MESSAGE "Failed to move ${file} to ${OA_MEDIA}. Exiting"
+           exit 1
+
+        fi
+
+    done
+
+}
+
+
+
+#+------------------------------------------------------+
+#+ Name       : INSTALL_SUBSTITUTIONS                   +
+#+ Description: Install OAF Substitutions               +
+#+ Parameters:  None                                    +
+#+------------------------------------------------------+
+USAGE="usage: INSTALL_SUBSTITUTIONS"
+function INSTALL_SUBSTITUTIONS
+{
+    WRITE_MESSAGE "Installing OAF Substitutions"
+    for file in ${l_OAF_zip} ; do
+        WRITE_MESSAGE "Extracting OAF Extension zip file ${file}"
+
+        echo " "
+        echo "Unzipping classes and xml ..."
+        cp ${file} ${CUST_TOP}
+        cd ${CUST_TOP}
+        unzip -o ${file}
+        chmod -R 755 ${CUST_TOP}/java
+
+        rm ${CUST_TOP}/${file}
+
+    done
+
+    cd ${l_install_from}
+
+
+    for file in ${l_OAF_list} ; do
+        WRITE_MESSAGE "Copying OAF Extension files ${file}"
+
+        echo " "
+        echo "Copying OAF Extension file ... ${file}"
+        cp ${file} $CUST_TOP/java${l_jpx_location}
+
+    done
+
+    WRITE_MESSAGE "Creating symbolic link to JAVA_TOP directory"
+
+    if [ -h ${JAVA_TOP}/${l_link_name} ] ; then
+        WRITE_MESSAGE "Link already exists - it will not be updated"
+    else
+        cd $JAVA_TOP
+        ln -s ${CUST_TOP}/java/${l_link_name} ${l_link_name} 2>&1 | tee -a ${l_log_file}
+    fi
+    cd ${l_install_from}
+
+
+    CONN="(description=(address_list=(ADDRESS=(PROTOCOL=TCP)(HOST=$HOST)(PORT=$PORT)))(CONNECT_DATA=(SID=$TWO_TASK)))"
+    ROOTDIR="$JAVA_TOP"
+    FILEN=${l_jpx_location}"${l_jpx_file}"
+    PW_APPS=`echo ${l_apps_user_pswd} | cut -d"/" -f2 | tail -1`
+        
+    echo "Connection=$CONN"
+    echo "Root Directory=$ROOTDIR"
+    echo "JPX Directory=$FILEN"
+
+    java -cp $CLASSPATH oracle.jrad.tools.xml.importer.JPXImporter $ROOTDIR"$FILEN" -dbconnection "$CONN" -username "APPS" -password "$PW_APPS"
+}
+
+#+------------------------------------------------------+
+#+ Name       : INSTALL_MISC_FILES                      +
+#+ Description: Install miscellaneous other files       +
+#+ Parameters:  None                                    +
+#+------------------------------------------------------+
+USAGE="usage: INSTALL_MISC_FILES"
+function INSTALL_MISC_FILES
+{
+    WRITE_MESSAGE "Installing miscellaneous other files"
+
+    for file in ${l_misc_files_copy} ; do
+  
+	   file="$file:$XXAQV_TOP"
+       filename=`echo $file | cut -d":" -f1 | tail -1`
+       path=`echo $file | cut -d":" -f2 | tail -1`
+
+       WRITE_MESSAGE "Copying file ${filename} to ${path}"
+       
+       cp ${filename} ${path}
+       
+    done
+
+    for file in ${l_misc_files_unzip} ; do
+  
+       file="$file:$JAVA_TOP"
+	   filename=`echo $file | cut -d":" -f1 | tail -1`
+       path=`echo $file | cut -d":" -f2 | tail -1`
+       
+       WRITE_MESSAGE "Unzipping archive ${filename} to ${path}"
+       
+       unzip -o ${filename} -d ${path}
+       
+    done
+}
+
+
+#+------------------------------------------------------+
+#+ Name       : CREATE_DIRECTORIES                      +
+#+ Description: Create directories to store workflows,  +
+#+              xml, etc.                               +
+#+ Parameters:  None                                    +
+#+------------------------------------------------------+
+
+USAGE="usage: CREATE_DIRECTORIES"
+function CREATE_DIRECTORIES
+{
+   mkdir -p ${CUST_TOP}/workflow
+   mkdir -p ${CUST_TOP}/xml
+   mkdir -p ${CUST_TOP}/install/sql
+   mkdir -p ${CUST_TOP}/inbound/ap
+   mkdir -p ${CUST_TOP}/inbound/ap/images
+   mkdir -p ${CUST_TOP}/inbound/ap/processed
+}
+
+#+------------------------------------------------------+
+#+ Name       : CLEAN_UP                                +
+#+ Description: Remove redundant install files          +
+#+                                                      +
+#+ Parameters:  None                                    +
+#+------------------------------------------------------+
+
+USAGE="usage: CLEAN_UP"
+function CLEAN_UP
+{
+    WRITE_MESSAGE "Deleting install files from the ${l_install_from} directory"
+
+    l_ret_status=0
+
+    for file in ${l_file_list} ; do
+        WRITE_MESSAGE "Deleting ${file}"
+        if [ -f ${l_install_from}/${file} ] ; then
+            rm ${file}
+        else
+           #+ WRITE_MESSAGE "Cannot find file ${file}"
+            l_ret_status=1
+        fi
+    done
+
+    return ${l_ret_status}
+}
+#
+#+------------------------------------------------------+
+#+ Name       : PERFORM_INSTALL                         +
+#+ Description: Performs the installation               +
+#+ Parameters:  None                                    +
+#+------------------------------------------------------+
+USAGE="usage: PERFORM_INSTALL"
+function PERFORM_INSTALL
+{
+    WRITE_MESSAGE "Performing installation"
+
+    CREATE_DIRECTORIES
+    
+    INSTALL_DB_OBJECTS
+
+    INSTALL_SEED_DATA
+
+    INSTALL_PACKAGES
+
+    INSTALL_TRIGGERS
+
+    INSTALL_WORKFLOWS
+
+    INSTALL_SHELL_SCRIPTS
+
+    INSTALL_CTL_SCRIPTS
+
+    INSTALL_RDF_FILES
+
+    INSTALL_SQL_FILES
+
+    INSTALL_FRM_FILES
+
+    INSTALL_LIBRARY
+
+    INSTALL_LOGOS
+
+    INSTALL_XML_METADATA
+
+    INSTALL_XML_TEMPLATE
+	
+	INSTALL_MISC_FILES
+
+}
+#
+#
+#+------------------------------------------------------+
+#+ M A I N                                              +
+#+------------------------------------------------------+
+#
+
+CHECK_CONNECTION
+
+if [ ${?} != 0 ] ; then
+   exit
+fi
+
+BANNER	
+
+CONTINUE
+
+if [ ${?} != 0 ] ; then
+   exit
+fi
+
+CHECK_FILES
+
+if [ ${?} != 0 ] ; then
+   WRITE_MESSAGE "Not all required files are present"
+   exit
+fi
+
+PERFORM_INSTALL
+
+WRITE_MESSAGE "Completed Installation.  The log file is ${l_log_file}"
